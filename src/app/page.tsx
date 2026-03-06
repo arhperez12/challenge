@@ -1,65 +1,100 @@
-import Image from "next/image";
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { Role } from "@/lib/types";
+
+// Фиксированные учетные данные
+const USERS: Record<string, { role: Role; pass: string }> = {
+  teacher: { role: "teacher", pass: "inf100" },
+  student1: { role: "student1", pass: "mat100" },
+  student2: { role: "student2", pass: "mat100" },
+};
 
 export default function Home() {
+  const router = useRouter();
+  const [login, setLogin] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    const userLogin = login.trim().toLowerCase();
+    const user = USERS[userLogin];
+
+    if (!user) {
+      setError("Пользователь не найден");
+      return;
+    }
+
+    if (user.pass !== password) {
+      setError("Неверный пароль");
+      return;
+    }
+
+    // Сохраняем роль и переходим в лобби
+    localStorage.setItem("ege_role", user.role);
+    router.push("/lobby");
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <div className="w-full max-w-md mx-auto flex flex-col items-center justify-center min-h-[80vh]">
+      <div className="neu-convex p-8 sm:p-12 w-full text-center space-y-8 rounded-3xl">
+        <div>
+          <h1 className="text-3xl sm:text-4xl font-bold text-[var(--primary)] drop-shadow-sm mb-2">
+            Вход в Систему 🔐
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-sm text-[var(--foreground)]/70">
+            Введите свой логин и пароль для доступа к челленджу.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+
+        <form onSubmit={handleLogin} className="space-y-6 pt-4 text-left">
+          <div className="flex flex-col gap-2">
+            <label className="font-bold text-sm ml-2">Логин:</label>
+            <input
+              type="text"
+              value={login}
+              onChange={(e) => setLogin(e.target.value)}
+              placeholder="Например: teacher"
+              className="w-full p-4 rounded-2xl neu-pressed bg-transparent outline-none focus:ring-2 ring-[var(--primary)] transition-all font-mono"
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label className="font-bold text-sm ml-2">Пароль:</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Введите пароль..."
+              className="w-full p-4 rounded-2xl neu-pressed bg-transparent outline-none focus:ring-2 ring-[var(--primary)] transition-all font-mono"
+            />
+          </div>
+
+          {error && (
+            <div className="text-red-500 font-bold text-sm text-center pt-2 animate-pulse">
+              {error}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            className="w-full py-4 text-lg font-bold rounded-2xl shadow-md bg-[var(--primary)] text-white hover:bg-blue-600 active:scale-95 transition-all mt-4"
           >
-            Documentation
-          </a>
+            Войти
+          </button>
+        </form>
+
+        <div className="pt-6 border-t border-gray-300/50 text-xs text-gray-500 text-left space-y-1">
+          <p className="font-bold underline mb-2">Доступные аккаунты:</p>
+          <p>🧑‍🏫 Логин: <b>teacher</b> | Пароль: <b>inf100</b></p>
+          <p>🧑‍🎓 Логин: <b>student1</b> | Пароль: <b>mat100</b></p>
+          <p>👨‍🎓 Логин: <b>student2</b> | Пароль: <b>mat100</b></p>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

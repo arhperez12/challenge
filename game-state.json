@@ -1,0 +1,93 @@
+{
+  "status": "PLAYING",
+  "currentRound": 2,
+  "roundOrder": [
+    5,
+    3,
+    2,
+    4,
+    1
+  ],
+  "players": {
+    "teacher": {
+      "isReady": true,
+      "score": 0,
+      "answers": {
+        "1": "27"
+      },
+      "sheetUrl": "test"
+    },
+    "student1": {
+      "isReady": true,
+      "score": 0,
+      "answers": {
+        "1": "1024"
+      },
+      "sheetUrl": "test"
+    },
+    "student2": {
+      "isReady": true,
+      "score": 0,
+      "answers": {
+        "1": "1024"
+      },
+      "sheetUrl": "test"
+    }
+  },
+  "tasks": {
+    "informatics": [
+      {
+        "level": 1,
+        "question": "Сколько мегабайт в 1 гигабайте?",
+        "answer": "1024"
+      },
+      {
+        "level": 2,
+        "question": "Переведите число 13 в двоичную систему счисления.",
+        "answer": "1101"
+      },
+      {
+        "level": 3,
+        "question": "Какое максимальное число можно закодировать 1 байтом?",
+        "answer": "255"
+      },
+      {
+        "level": 4,
+        "question": "Решите логическое уравнение: 1 AND (0 OR 1).",
+        "answer": "1"
+      },
+      {
+        "level": 5,
+        "question": "Вычислите 2^10.",
+        "answer": "1024"
+      }
+    ],
+    "mathematics": [
+      {
+        "level": 1,
+        "question": "Вычислите 15 + 28.",
+        "answer": "43"
+      },
+      {
+        "level": 2,
+        "question": "Найдите площадь квадрата со стороной 5.",
+        "answer": "25"
+      },
+      {
+        "level": 3,
+        "question": "Решите уравнение 2x - 4 = 10.",
+        "answer": "7"
+      },
+      {
+        "level": 4,
+        "question": "Чему равен корень из 144?",
+        "answer": "12"
+      },
+      {
+        "level": 5,
+        "question": "Найдите значение выражения 3^3.",
+        "answer": "27"
+      }
+    ]
+  }
+}

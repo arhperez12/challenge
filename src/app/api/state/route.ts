@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
         }
 
         if (action === "start") {
-            const { totalRounds = 5, allowedLevels = [1, 2, 3, 4, 5] } = payload || {};
+            const { totalRounds = 5, allowedLevels = [1, 2, 3, 4, 5], expectedStudents = 2 } = payload || {};
 
             // Генерация раундов из пула разрешенных уровней
             const levels = [];
@@ -51,6 +51,7 @@ export async function POST(req: NextRequest) {
             }
             state.totalRounds = totalRounds;
             state.allowedLevels = allowedLevels;
+            state.expectedStudents = expectedStudents;
             state.roundOrder = levels;
             state.currentRound = 1;
             state.status = "PLAYING";
@@ -108,12 +109,14 @@ export async function POST(req: NextRequest) {
 
                 // Для Математики (Учеников) проверяем ответы по информатике
                 const iTasksForLevel = state.tasks.informatics.filter((t) => t.level === level);
-                ["student1", "student2"].forEach((st) => {
-                    const sPlayer = state.players[st as Role];
+                for (let i = 1; i <= state.expectedStudents; i++) {
+                    const st = `student${i}` as Role;
+                    const sPlayer = state.players[st];
+                    if (!sPlayer) continue;
                     const offsetI = sPlayer.replacedTaskOffsets?.[level] || 0;
                     const iTask = iTasksForLevel[offsetI % iTasksForLevel.length || 0];
                     calculateScore(sPlayer, iTask);
-                });
+                }
             }
 
             if (state.currentRound < state.totalRounds) {
@@ -153,12 +156,14 @@ export async function POST(req: NextRequest) {
             state.timeLimit = getLevelTime(levels[0]);
             state.events = [];
 
-            ["teacher", "student1", "student2"].forEach(r => {
-                state.players[r as Role].score = 0;
-                state.players[r as Role].answers = {};
-                state.players[r as Role].timeTaken = {};
-                state.players[r as Role].hasUsedReplace = false;
-                state.players[r as Role].replacedTaskOffsets = {};
+            ["teacher", "student1", "student2", "student3", "student4", "student5"].forEach(r => {
+                if (state.players[r as Role]) {
+                    state.players[r as Role].score = 0;
+                    state.players[r as Role].answers = {};
+                    state.players[r as Role].timeTaken = {};
+                    state.players[r as Role].hasUsedReplace = false;
+                    state.players[r as Role].replacedTaskOffsets = {};
+                }
             });
             writeGameState(state);
             return NextResponse.json(state);

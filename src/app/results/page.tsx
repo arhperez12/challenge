@@ -39,7 +39,7 @@ export default function ResultsPage() {
         );
     }
 
-    const { players, tasks, roundOrder } = gameState;
+    const { players, tasks, roundOrder, expectedStudents = 2 } = gameState;
 
     const handleRestart = async () => {
         try {
@@ -80,10 +80,21 @@ export default function ResultsPage() {
                 </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-4xl mb-12">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 w-full max-w-4xl mb-12">
                 <PlayerScoreCard pRole="teacher" label="Учитель" icon="👨‍🏫" />
-                <PlayerScoreCard pRole="student1" label="Ученик 1" icon="🧑‍🎓" />
-                <PlayerScoreCard pRole="student2" label="Ученик 2" icon="👨‍🎓" />
+                {Array.from({ length: expectedStudents }).map((_, i) => {
+                    const stRole = `student${i + 1}` as Role;
+                    // Only render if player played or exists
+                    if (!players[stRole]) return null;
+                    return (
+                        <PlayerScoreCard
+                            key={stRole}
+                            pRole={stRole}
+                            label={`Ученик ${i + 1}`}
+                            icon="🧑‍🎓"
+                        />
+                    );
+                })}
             </div>
 
             {/* Details/Review - show correct answers for the current user's role */}

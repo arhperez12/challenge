@@ -127,7 +127,7 @@ export default function ChallengePage() {
         );
     }
 
-    const { currentRound, roundOrder, players, tasks, totalRounds = 5 } = gameState;
+    const { currentRound, roundOrder, players, tasks, totalRounds = 5, expectedStudents = 2 } = gameState;
     const currentLevel = roundOrder[currentRound - 1]; // level of the current round
 
     // Decide which task pool to use: teacher gets math, students get informatics
@@ -139,10 +139,15 @@ export default function ChallengePage() {
     const hasAnsweredCurrentRound = !!players[role].answers[currentRound];
 
     // Check if everyone has answered this round
-    const allAnswered =
-        !!players.teacher.answers[currentRound] &&
-        !!players.student1.answers[currentRound] &&
-        !!players.student2.answers[currentRound];
+    const isAllAnswered = () => {
+        if (!players.teacher?.answers[currentRound]) return false;
+        for (let i = 1; i <= expectedStudents; i++) {
+            const studentRole = `student${i}` as Role;
+            if (!players[studentRole]?.answers[currentRound]) return false;
+        }
+        return true;
+    };
+    const allAnswered = isAllAnswered();
 
     const submitAnswer = async (finalAnswer: string) => {
         if (!finalAnswer.trim() || hasAnsweredCurrentRound || submitting) return;
@@ -207,25 +212,25 @@ export default function ChallengePage() {
                         Текущий уровень сложности: <span className="text-[var(--primary)] font-bold">{currentLevel}</span>
                     </p>
                 </div>
-                <div className="neu-flat px-6 py-3 rounded-xl flex gap-6 font-bold">
+                <div className="neu-flat px-6 py-3 rounded-xl flex gap-6 font-bold flex-wrap justify-center">
                     <div className="text-center">
                         <span className="text-xs opacity-60 block">Учитель</span>
-                        <span className={players.teacher.answers[currentRound] ? "text-green-500" : "text-gray-400"}>
-                            {players.teacher.answers[currentRound] ? "✓" : "..."}
+                        <span className={players.teacher?.answers[currentRound] ? "text-green-500" : "text-gray-400"}>
+                            {players.teacher?.answers[currentRound] ? "✓" : "..."}
                         </span>
                     </div>
-                    <div className="text-center">
-                        <span className="text-xs opacity-60 block">Ученик 1</span>
-                        <span className={players.student1.answers[currentRound] ? "text-green-500" : "text-gray-400"}>
-                            {players.student1.answers[currentRound] ? "✓" : "..."}
-                        </span>
-                    </div>
-                    <div className="text-center">
-                        <span className="text-xs opacity-60 block">Ученик 2</span>
-                        <span className={players.student2.answers[currentRound] ? "text-green-500" : "text-gray-400"}>
-                            {players.student2.answers[currentRound] ? "✓" : "..."}
-                        </span>
-                    </div>
+                    {Array.from({ length: expectedStudents }).map((_, i) => {
+                        const stRole = `student${i + 1}` as Role;
+                        const hasAns = players[stRole]?.answers[currentRound];
+                        return (
+                            <div key={stRole} className="text-center">
+                                <span className="text-xs opacity-60 block">Ученик {i + 1}</span>
+                                <span className={hasAns ? "text-green-500" : "text-gray-400"}>
+                                    {hasAns ? "✓" : "..."}
+                                </span>
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
 

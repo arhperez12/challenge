@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { GameState } from "@/lib/types";
 
 // Define role types for clarity
-export type Role = "teacher" | "student1" | "student2";
+export type Role = "teacher" | "student1" | "student2" | "student3" | "student4" | "student5";
 
 export default function LobbyPage() {
     const router = useRouter();
@@ -18,6 +18,7 @@ export default function LobbyPage() {
     // Settings
     const [totalRounds, setTotalRounds] = useState(5);
     const [allowedLevels, setAllowedLevels] = useState<number[]>([1, 2, 3, 4, 5]);
+    const [expectedStudents, setExpectedStudents] = useState<number>(2);
 
     useEffect(() => {
         // Check local storage for selected role
@@ -91,7 +92,7 @@ export default function LobbyPage() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     action: "start",
-                    payload: { totalRounds, allowedLevels }
+                    payload: { totalRounds, allowedLevels, expectedStudents }
                 }),
             });
         } catch (e) {
@@ -120,22 +121,38 @@ export default function LobbyPage() {
         }
     };
 
-    const allReady = gameState &&
-        gameState.players.teacher.isReady &&
-        gameState.players.student1.isReady &&
-        gameState.players.student2.isReady;
+    const isAllReady = () => {
+        if (!gameState) return false;
+        if (!gameState.players.teacher.isReady) return false;
+        const countToWait = role === "teacher" ? expectedStudents : gameState.expectedStudents;
+        for (let i = 1; i <= countToWait; i++) {
+            const studentRole = `student${i}` as Role;
+            if (!gameState.players[studentRole]?.isReady) return false;
+        }
+        return true;
+    };
+    const allReady = isAllReady();
 
     if (loading || !role) return null;
+
+    const roleNameMap: Record<string, string> = {
+        teacher: "Учитель (Информатика)",
+        student1: "Ученик 1 (Математика)",
+        student2: "Ученик 2 (Математика)",
+        student3: "Ученик 3 (Математика)",
+        student4: "Ученик 4 (Математика)",
+        student5: "Ученик 5 (Математика)",
+    };
 
     return (
         <div className="w-full max-w-3xl mx-auto flex flex-col items-center justify-center min-h-[80vh] py-6">
             <div className="neu-convex p-8 sm:p-12 w-full space-y-8 rounded-3xl">
                 <div className="text-center">
                     <div className="text-6xl mb-4">
-                        {role === "teacher" ? "👨‍🏫" : role === "student1" ? "🧑‍🎓" : "👨‍🎓"}
+                        {role === "teacher" ? "👨‍🏫" : "🧑‍🎓"}
                     </div>
                     <h1 className="text-3xl font-bold text-[var(--primary)] uppercase tracking-wide">
-                        {role === "teacher" ? "Учитель (Информатика)" : role === "student1" ? "Ученик 1 (Математика)" : "Ученик 2 (Математика)"}
+                        {roleNameMap[role] || "Участник"}
                     </h1>
                     <p className="mt-4 text-[var(--foreground)]/70 text-lg font-medium">
                         Добро пожаловать в лобби
@@ -231,6 +248,17 @@ export default function LobbyPage() {
                                         min="1" max="20"
                                         value={totalRounds}
                                         onChange={(e) => setTotalRounds(Number(e.target.value) || 1)}
+                                        className="p-3 rounded-xl neu-pressed bg-transparent outline-none w-32"
+                                    />
+                                </label>
+
+                                <label className="flex flex-col gap-2 font-medium">
+                                    <span>Количество учеников:</span>
+                                    <input
+                                        type="number"
+                                        min="1" max="5"
+                                        value={expectedStudents}
+                                        onChange={(e) => setExpectedStudents(Number(e.target.value) || 1)}
                                         className="p-3 rounded-xl neu-pressed bg-transparent outline-none w-32"
                                     />
                                 </label>

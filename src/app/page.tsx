@@ -9,6 +9,9 @@ const USERS: Record<string, { role: Role; pass: string }> = {
   teacher: { role: "teacher", pass: "inf100" },
   student1: { role: "student1", pass: "mat100" },
   student2: { role: "student2", pass: "mat100" },
+  student3: { role: "student3", pass: "mat100" },
+  student4: { role: "student4", pass: "mat100" },
+  student5: { role: "student5", pass: "mat100" },
 };
 
 export default function Home() {
@@ -91,8 +94,7 @@ export default function Home() {
         <div className="pt-6 border-t border-gray-300/50 text-xs text-gray-500 text-left space-y-1">
           <p className="font-bold underline mb-2">Доступные аккаунты:</p>
           <p>🧑‍🏫 Логин: <b>teacher</b> | Пароль: <b>inf100</b></p>
-          <p>🧑‍🎓 Логин: <b>student1</b> | Пароль: <b>mat100</b></p>
-          <p>👨‍🎓 Логин: <b>student2</b> | Пароль: <b>mat100</b></p>
+          <p>🧑‍🎓 Логины: <b>student1</b> ... <b>student5</b> | Пароль: <b>mat100</b></p>
         </div>
       </div>
     </div>

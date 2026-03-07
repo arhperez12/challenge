@@ -1,4 +1,4 @@
-export type Role = "teacher" | "student1" | "student2";
+export type Role = "teacher" | "student1" | "student2" | "student3" | "student4" | "student5";
 export type GameStatus = "LOBBY" | "PLAYING" | "FINISHED";
 
 export interface Task {
@@ -31,6 +31,7 @@ export interface GameState {
     status: GameStatus;
     totalRounds: number;
     allowedLevels: number[];
+    expectedStudents: number; // 1 to 5
     currentRound: number; // e.g. 1 to totalRounds
     roundOrder: number[]; // e.g., [3, 1, 5, 2, 4] denoting the level logic for each of the rounds
     roundStartTime: number | null; // Epoch timestamp of when the round began
@@ -47,6 +48,7 @@ export const initialGameState: GameState = {
     status: "LOBBY",
     totalRounds: 5,
     allowedLevels: [1, 2, 3, 4, 5],
+    expectedStudents: 2,
     currentRound: 1,
     roundOrder: [],
     roundStartTime: null,
@@ -56,6 +58,9 @@ export const initialGameState: GameState = {
         teacher: { isReady: false, score: 0, answers: {}, timeTaken: {}, hasUsedReplace: false, replacedTaskOffsets: {} },
         student1: { isReady: false, score: 0, answers: {}, timeTaken: {}, hasUsedReplace: false, replacedTaskOffsets: {} },
         student2: { isReady: false, score: 0, answers: {}, timeTaken: {}, hasUsedReplace: false, replacedTaskOffsets: {} },
+        student3: { isReady: false, score: 0, answers: {}, timeTaken: {}, hasUsedReplace: false, replacedTaskOffsets: {} },
+        student4: { isReady: false, score: 0, answers: {}, timeTaken: {}, hasUsedReplace: false, replacedTaskOffsets: {} },
+        student5: { isReady: false, score: 0, answers: {}, timeTaken: {}, hasUsedReplace: false, replacedTaskOffsets: {} },
     },
     tasks: {
         informatics: [

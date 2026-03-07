@@ -127,12 +127,14 @@ export default function ChallengePage() {
         );
     }
 
-    const { currentRound, roundOrder, players, tasks } = gameState;
+    const { currentRound, roundOrder, players, tasks, totalRounds = 5 } = gameState;
     const currentLevel = roundOrder[currentRound - 1]; // level of the current round
 
     // Decide which task pool to use: teacher gets math, students get informatics
     const taskPool = role === "teacher" ? tasks.mathematics : tasks.informatics;
-    const currentTask = taskPool.find((t) => t.level === currentLevel);
+    const offset = players[role].replacedTaskOffsets?.[currentLevel] || 0;
+    const poolForLevel = taskPool.filter((t) => t.level === currentLevel);
+    const currentTask = poolForLevel[offset % poolForLevel.length || 0];
 
     const hasAnsweredCurrentRound = !!players[role].answers[currentRound];
 
@@ -179,6 +181,19 @@ export default function ChallengePage() {
         }
     };
 
+    const handleReplace = async () => {
+        if (!confirm("Вы уверены, что хотите потратить единственный бонус заменs вопроса? Новое задание будет того же уровня.")) return;
+        try {
+            await fetch("/api/state", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "replace_task", payload: { role, round: currentRound } }),
+            });
+        } catch (e) {
+            alert("Ошибка при замене вопроса");
+        }
+    };
+
     return (
         <div className={`w-full flex flex-col items-center min-h-[80vh] py-6 transition-all duration-[2000ms] ${effectBlur ? "blur-sm opacity-80" : ""} ${effectFlip ? "rotate-180" : ""} ${effectShake ? "animate-[bounce_0.2s_infinite]" : ""}`}>
 
@@ -186,7 +201,7 @@ export default function ChallengePage() {
             <div className="w-full max-w-4xl neu-convex p-6 rounded-3xl mb-8 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div>
                     <h2 className="text-2xl font-bold text-[var(--primary)] uppercase tracking-widest">
-                        Раунд {currentRound} / 5
+                        Раунд {currentRound} / {totalRounds}
                     </h2>
                     <p className="text-sm font-medium opacity-70 mt-1">
                         Текущий уровень сложности: <span className="text-[var(--primary)] font-bold">{currentLevel}</span>
@@ -263,21 +278,32 @@ export default function ChallengePage() {
 
                         <div className="mt-auto pt-8">
                             {!hasAnsweredCurrentRound ? (
-                                <form onSubmit={handleSubmit} className="flex gap-4">
-                                    <input
-                                        type="text"
-                                        value={answer}
-                                        onChange={(e) => setAnswer(e.target.value)}
-                                        placeholder="Введите ваш ответ..."
-                                        className="flex-grow p-4 rounded-2xl neu-pressed bg-transparent outline-none focus:ring-2 ring-[var(--primary)] text-lg font-mono font-bold"
-                                    />
-                                    <button
-                                        type="submit"
-                                        disabled={submitting || !answer.trim()}
-                                        className="px-8 py-4 bg-[var(--primary)] text-white font-bold rounded-2xl shadow-lg hover:shadow-xl hover:bg-blue-600 active:scale-95 transition-all"
-                                    >
-                                        Ответить
-                                    </button>
+                                <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                                    <div className="flex gap-4">
+                                        <input
+                                            type="text"
+                                            value={answer}
+                                            onChange={(e) => setAnswer(e.target.value)}
+                                            placeholder="Введите ваш ответ..."
+                                            className="flex-grow p-4 rounded-2xl neu-pressed bg-transparent outline-none focus:ring-2 ring-[var(--primary)] text-lg font-mono font-bold"
+                                        />
+                                        <button
+                                            type="submit"
+                                            disabled={submitting || !answer.trim()}
+                                            className="px-8 py-4 bg-[var(--primary)] text-white font-bold rounded-2xl shadow-lg hover:shadow-xl hover:bg-blue-600 active:scale-95 transition-all"
+                                        >
+                                            Ответить
+                                        </button>
+                                    </div>
+                                    {!players[role].hasUsedReplace && (
+                                        <button
+                                            type="button"
+                                            onClick={handleReplace}
+                                            className="self-end px-4 py-2 text-sm bg-orange-500 text-white font-bold rounded-xl shadow hover:bg-orange-600 active:scale-95 transition-all"
+                                        >
+                                            🔄 Заменить вопрос (1 раз за игру)
+                                        </button>
+                                    )}
                                 </form>
                             ) : (
                                 <div className="p-6 neu-pressed rounded-2xl text-center">
@@ -301,7 +327,7 @@ export default function ChallengePage() {
                             onClick={handleNextRound}
                             className="px-10 py-4 bg-green-500 text-white font-bold text-xl rounded-2xl shadow-lg hover:bg-green-600 hover:scale-105 active:scale-95 transition-all animate-bounce w-full"
                         >
-                            {currentRound < 5 ? "Перейти к следующему раунду" : "Завершить игру и показать итоги"}
+                            {currentRound < totalRounds ? "Перейти к следующему раунду" : "Завершить игру и показать итоги"}
                         </button>
                     </div>
                 )}

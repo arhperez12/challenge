@@ -14,6 +14,8 @@ export interface Player {
     sheetUrl?: string;
     answers: Record<number, string>; // mapping from round number (1-5) to string answer
     timeTaken: Record<number, number>; // mapping from round number to seconds taken to answer
+    hasUsedReplace: boolean; // tracks if the player has used their 1 replacement per game
+    replacedTaskOffsets: Record<number, number>; // tracks index offset for replaced tasks
 }
 
 export interface GameEvent {
@@ -27,8 +29,10 @@ export interface GameEvent {
 
 export interface GameState {
     status: GameStatus;
-    currentRound: number; // 1 to 5
-    roundOrder: number[]; // e.g., [3, 1, 5, 2, 4] denoting the level logic for each of the 5 rounds
+    totalRounds: number;
+    allowedLevels: number[];
+    currentRound: number; // e.g. 1 to totalRounds
+    roundOrder: number[]; // e.g., [3, 1, 5, 2, 4] denoting the level logic for each of the rounds
     roundStartTime: number | null; // Epoch timestamp of when the round began
     timeLimit: number; // Base time limit in seconds for the current round
     events: GameEvent[]; // Interactive events from Twitch/DonationAlerts
@@ -41,15 +45,17 @@ export interface GameState {
 
 export const initialGameState: GameState = {
     status: "LOBBY",
+    totalRounds: 5,
+    allowedLevels: [1, 2, 3, 4, 5],
     currentRound: 1,
     roundOrder: [],
     roundStartTime: null,
     timeLimit: 60,
     events: [],
     players: {
-        teacher: { isReady: false, score: 0, answers: {}, timeTaken: {} },
-        student1: { isReady: false, score: 0, answers: {}, timeTaken: {} },
-        student2: { isReady: false, score: 0, answers: {}, timeTaken: {} },
+        teacher: { isReady: false, score: 0, answers: {}, timeTaken: {}, hasUsedReplace: false, replacedTaskOffsets: {} },
+        student1: { isReady: false, score: 0, answers: {}, timeTaken: {}, hasUsedReplace: false, replacedTaskOffsets: {} },
+        student2: { isReady: false, score: 0, answers: {}, timeTaken: {}, hasUsedReplace: false, replacedTaskOffsets: {} },
     },
     tasks: {
         informatics: [

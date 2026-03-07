@@ -42,18 +42,23 @@ export async function POST(req: NextRequest) {
         }
 
         if (action === "start") {
-            // Генерация 5 раундов со случайным уровнем сложности
-            const levels = [1, 2, 3, 4, 5];
-            for (let i = levels.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [levels[i], levels[j]] = [levels[j], levels[i]];
+            const { totalRounds = 5, allowedLevels = [1, 2, 3, 4, 5] } = payload || {};
+
+            // Генерация раундов из пула разрешенных уровней
+            const levels = [];
+            for (let i = 0; i < totalRounds; i++) {
+                levels.push(allowedLevels[Math.floor(Math.random() * allowedLevels.length)]);
             }
+            state.totalRounds = totalRounds;
+            state.allowedLevels = allowedLevels;
             state.roundOrder = levels;
             state.currentRound = 1;
             state.status = "PLAYING";
             state.roundStartTime = Date.now();
+
             const firstLevel = levels[0];
-            state.timeLimit = firstLevel * 120; // От 2 до 10 минут (уровень * 120 сек)
+            const getLevelTime = (lvl: number) => ({ 1: 120, 2: 300, 3: 480, 4: 720, 5: 900 }[lvl] || 120);
+            state.timeLimit = getLevelTime(firstLevel);
             state.events = [];
             writeGameState(state);
             return NextResponse.json(state);
@@ -76,7 +81,7 @@ export async function POST(req: NextRequest) {
         }
 
         if (action === "next_round") {
-            if (state.currentRound <= 5) {
+            if (state.currentRound <= state.totalRounds) {
                 // Подсчет результатов за текущий раунд (score)
                 const levels = state.roundOrder;
                 const roundIdx = state.currentRound - 1;
@@ -96,22 +101,27 @@ export async function POST(req: NextRequest) {
 
                 // Для Информатики (Учителя) проверяем ответы на задания по математике
                 const tPlayer = state.players["teacher"];
-                const mTask = state.tasks.mathematics.find((t) => t.level === level);
+                const offsetM = tPlayer.replacedTaskOffsets?.[level] || 0;
+                const mTasksForLevel = state.tasks.mathematics.filter((t) => t.level === level);
+                const mTask = mTasksForLevel[offsetM % mTasksForLevel.length || 0];
                 calculateScore(tPlayer, mTask);
 
                 // Для Математики (Учеников) проверяем ответы по информатике
-                const iTask = state.tasks.informatics.find((t) => t.level === level);
+                const iTasksForLevel = state.tasks.informatics.filter((t) => t.level === level);
                 ["student1", "student2"].forEach((st) => {
                     const sPlayer = state.players[st as Role];
+                    const offsetI = sPlayer.replacedTaskOffsets?.[level] || 0;
+                    const iTask = iTasksForLevel[offsetI % iTasksForLevel.length || 0];
                     calculateScore(sPlayer, iTask);
                 });
             }
 
-            if (state.currentRound < 5) {
+            if (state.currentRound < state.totalRounds) {
                 state.currentRound += 1;
                 state.roundStartTime = Date.now();
                 const nextLevel = state.roundOrder[state.currentRound - 1];
-                state.timeLimit = nextLevel * 120; // Уровень * 120 секунд
+                const getLevelTime = (lvl: number) => ({ 1: 120, 2: 300, 3: 480, 4: 720, 5: 900 }[lvl] || 120);
+                state.timeLimit = getLevelTime(nextLevel);
                 state.events = [];
             } else {
                 state.status = "FINISHED";
@@ -128,24 +138,43 @@ export async function POST(req: NextRequest) {
         }
 
         if (action === "restart_match") {
-            const levels = [1, 2, 3, 4, 5];
-            for (let i = levels.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [levels[i], levels[j]] = [levels[j], levels[i]];
+            const allowedLevels = state.allowedLevels || [1, 2, 3, 4, 5];
+            const totalRounds = state.totalRounds || 5;
+
+            const levels = [];
+            for (let i = 0; i < totalRounds; i++) {
+                levels.push(allowedLevels[Math.floor(Math.random() * allowedLevels.length)]);
             }
             state.roundOrder = levels;
             state.currentRound = 1;
             state.status = "PLAYING";
             state.roundStartTime = Date.now();
-            state.timeLimit = levels[0] * 120;
+            const getLevelTime = (lvl: number) => ({ 1: 120, 2: 300, 3: 480, 4: 720, 5: 900 }[lvl] || 120);
+            state.timeLimit = getLevelTime(levels[0]);
             state.events = [];
 
             ["teacher", "student1", "student2"].forEach(r => {
                 state.players[r as Role].score = 0;
                 state.players[r as Role].answers = {};
                 state.players[r as Role].timeTaken = {};
+                state.players[r as Role].hasUsedReplace = false;
+                state.players[r as Role].replacedTaskOffsets = {};
             });
             writeGameState(state);
+            return NextResponse.json(state);
+        }
+
+        if (action === "replace_task") {
+            const { role, round } = payload as { role: Role, round: number };
+            const player = state.players[role];
+
+            if (player && !player.hasUsedReplace) {
+                const currentLevel = state.roundOrder[round - 1];
+                player.hasUsedReplace = true;
+                if (!player.replacedTaskOffsets) player.replacedTaskOffsets = {};
+                player.replacedTaskOffsets[currentLevel] = (player.replacedTaskOffsets[currentLevel] || 0) + 1;
+                writeGameState(state);
+            }
             return NextResponse.json(state);
         }
 

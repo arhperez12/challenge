@@ -15,6 +15,10 @@ export default function LobbyPage() {
     const [loading, setLoading] = useState(true);
     const [gameState, setGameState] = useState<GameState | null>(null);
 
+    // Settings
+    const [totalRounds, setTotalRounds] = useState(5);
+    const [allowedLevels, setAllowedLevels] = useState<number[]>([1, 2, 3, 4, 5]);
+
     useEffect(() => {
         // Check local storage for selected role
         const savedRole = localStorage.getItem("ege_role") as Role | null;
@@ -77,15 +81,28 @@ export default function LobbyPage() {
     };
 
     const handleStart = async () => {
+        if (allowedLevels.length === 0) {
+            alert("Выберите хотя бы один уровень сложности!");
+            return;
+        }
         try {
             await fetch("/api/state", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ action: "start" }),
+                body: JSON.stringify({
+                    action: "start",
+                    payload: { totalRounds, allowedLevels }
+                }),
             });
         } catch (e) {
             alert("Не удалось запустить игру");
         }
+    };
+
+    const toggleLevel = (lvl: number) => {
+        setAllowedLevels(prev =>
+            prev.includes(lvl) ? prev.filter(l => l !== lvl) : [...prev, lvl].sort((a, b) => a - b)
+        );
     };
 
     const handleForceReset = async () => {
@@ -148,17 +165,23 @@ export default function LobbyPage() {
                 </div>
 
                 {gameState?.status === "PLAYING" ? (
-                    <div className="neu-flat p-6 rounded-2xl flex flex-col gap-4 border-2 border-red-500/50 bg-red-500/10">
-                        <label className="font-bold text-lg text-red-400">
-                            ⚠️ Игра уже в процессе!
+                    <div className="neu-flat p-6 rounded-2xl flex flex-col gap-4 border-2 border-green-500/50 bg-green-500/10">
+                        <label className="font-bold text-lg text-green-500">
+                            ▶️ Игра уже в процессе!
                         </label>
                         <p className="text-sm opacity-80">
-                            Вы не можете присоединиться, так как матч уже начался. Учитель может сбросить игру.
+                            Матч уже начался. Вы можете присоединиться к текущей игре.
                         </p>
+                        <button
+                            onClick={() => router.push("/challenge")}
+                            className="w-full py-4 bg-green-500 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl hover:bg-green-600 active:scale-95 transition-all mt-2 animate-bounce"
+                        >
+                            Присоединиться к активной игре
+                        </button>
                         {role === "teacher" && (
                             <button
                                 onClick={handleForceReset}
-                                className="w-full py-4 bg-red-500 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl hover:bg-red-600 active:scale-95 transition-all mt-2"
+                                className="w-full py-3 bg-red-500 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl hover:bg-red-600 active:scale-95 transition-all mt-2 opacity-80"
                             >
                                 Прервать и сбросить игру
                             </button>
@@ -196,12 +219,46 @@ export default function LobbyPage() {
                 )}
 
                 {role === "teacher" && (
-                    <div className="pt-8 border-t border-[var(--foreground)]/10 text-center">
+                    <div className="pt-8 border-t border-[var(--foreground)]/10 text-center flex flex-col items-center">
+                        <div className="w-full neu-flat p-6 rounded-2xl mb-6 text-left">
+                            <h3 className="font-bold text-[var(--primary)] mb-4">⚙️ Настройки матча:</h3>
+
+                            <div className="flex flex-col gap-4">
+                                <label className="flex flex-col gap-2 font-medium">
+                                    <span>Количество раундов:</span>
+                                    <input
+                                        type="number"
+                                        min="1" max="20"
+                                        value={totalRounds}
+                                        onChange={(e) => setTotalRounds(Number(e.target.value) || 1)}
+                                        className="p-3 rounded-xl neu-pressed bg-transparent outline-none w-32"
+                                    />
+                                </label>
+
+                                <div className="space-y-2">
+                                    <span className="font-medium">Доступные уровни сложности (пул):</span>
+                                    <div className="flex flex-wrap gap-3">
+                                        {[1, 2, 3, 4, 5].map(lvl => (
+                                            <label key={lvl} className="flex items-center gap-2 cursor-pointer neu-pressed px-4 py-2 rounded-xl">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={allowedLevels.includes(lvl)}
+                                                    onChange={() => toggleLevel(lvl)}
+                                                    className="w-5 h-5 accent-[var(--primary)]"
+                                                />
+                                                Уровень {lvl}
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <button
                             onClick={handleStart}
                             disabled={!allReady}
-                            className={`px-8 py-3 rounded-xl shadow-lg transition-all font-bold ${allReady
-                                ? "bg-[var(--primary)] text-white hover:shadow-xl hover:bg-blue-600"
+                            className={`px-12 py-4 rounded-2xl shadow-lg transition-all font-bold text-xl ${allReady
+                                ? "bg-[var(--primary)] text-white hover:shadow-xl hover:bg-blue-600 hover:scale-105"
                                 : "bg-gray-400 text-gray-200 cursor-not-allowed opacity-50"
                                 }`}
                         >

@@ -127,6 +127,58 @@ export async function POST(req: NextRequest) {
             return NextResponse.json(state);
         }
 
+        if (action === "restart_match") {
+            const levels = [1, 2, 3, 4, 5];
+            for (let i = levels.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [levels[i], levels[j]] = [levels[j], levels[i]];
+            }
+            state.roundOrder = levels;
+            state.currentRound = 1;
+            state.status = "PLAYING";
+            state.roundStartTime = Date.now();
+            state.timeLimit = levels[0] * 120;
+            state.events = [];
+
+            ["teacher", "student1", "student2"].forEach(r => {
+                state.players[r as Role].score = 0;
+                state.players[r as Role].answers = {};
+                state.players[r as Role].timeTaken = {};
+            });
+            writeGameState(state);
+            return NextResponse.json(state);
+        }
+
+        if (action === "test_event") {
+            const types = ["blur", "flip", "shake", "hint", "add_time", "reduce_time", "add_points"];
+            const type = types[Math.floor(Math.random() * types.length)];
+            const targets: ("all" | Role)[] = ["all", "teacher", "student1", "student2"];
+            const targetRole = targets[Math.floor(Math.random() * targets.length)];
+
+            const event: any = {
+                id: Math.random().toString(36).substring(7),
+                type,
+                targetRole,
+                value: type === "add_points" ? 500 : (type.includes("time") ? 30 : 5),
+                message: type === "hint" ? "Тестовая подсказка из чата!" : `Тест эффекта: ${type}`,
+                timestamp: Date.now()
+            };
+
+            state.events.push(event);
+
+            if (type === "add_time") {
+                state.timeLimit += 30;
+            } else if (type === "reduce_time") {
+                state.timeLimit = Math.max(10, state.timeLimit - 30);
+            } else if (type === "add_points") {
+                if (targetRole !== "all") {
+                    state.players[targetRole as Role].score += 500;
+                }
+            }
+            writeGameState(state);
+            return NextResponse.json(state);
+        }
+
         return NextResponse.json({ error: "Unknown action" }, { status: 400 });
     } catch (error: any) {
         return NextResponse.json({ error: error.message }, { status: 500 });

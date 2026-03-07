@@ -299,10 +299,37 @@ export default function ChallengePage() {
                     <div className="mt-8 text-center">
                         <button
                             onClick={handleNextRound}
-                            className="px-10 py-4 bg-green-500 text-white font-bold text-xl rounded-2xl shadow-lg hover:bg-green-600 hover:scale-105 active:scale-95 transition-all animate-bounce"
+                            className="px-10 py-4 bg-green-500 text-white font-bold text-xl rounded-2xl shadow-lg hover:bg-green-600 hover:scale-105 active:scale-95 transition-all animate-bounce w-full"
                         >
                             {currentRound < 5 ? "Перейти к следующему раунду" : "Завершить игру и показать итоги"}
                         </button>
+                    </div>
+                )}
+
+                {/* Teacher Admin Controls */}
+                {role === "teacher" && (
+                    <div className="mt-8 mb-4 w-full max-w-4xl neu-flat p-6 rounded-3xl border-2 border-red-500/20 bg-red-500/5">
+                        <h3 className="text-red-400 font-bold mb-4">🛠 Панель тестирования (Видит только Учитель)</h3>
+                        <div className="flex flex-wrap gap-4">
+                            <button
+                                onClick={async () => {
+                                    if (confirm("Сбросить весь прогресс, счет и таймеры и начать Игру с 1 раунда заново?")) {
+                                        await fetch("/api/state", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "restart_match" }) });
+                                    }
+                                }}
+                                className="px-6 py-3 bg-red-500 text-white font-bold rounded-xl shadow-lg hover:bg-red-600 active:scale-95 transition-all text-sm"
+                            >
+                                🔄 Рестарт текущей игры (с 1 раунда)
+                            </button>
+                            <button
+                                onClick={async () => {
+                                    await fetch("/api/state", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "test_event" }) });
+                                }}
+                                className="px-6 py-3 bg-purple-500 text-white font-bold rounded-xl shadow-lg hover:bg-purple-600 active:scale-95 transition-all text-sm flex items-center gap-2"
+                            >
+                                ⚡ Тест случайного Доната / Баффа
+                            </button>
+                        </div>
                     </div>
                 )}
             </div>

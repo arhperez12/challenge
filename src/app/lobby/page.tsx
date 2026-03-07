@@ -35,8 +35,9 @@ export default function LobbyPage() {
                 if (res.ok) {
                     const state = await res.json();
                     setGameState(state);
-                    // If teacher started the game, go to challenge
-                    if (state.status === "PLAYING") {
+                    setGameState(state);
+                    // If teacher started the game AND current player is ready, go to challenge
+                    if (state.status === "PLAYING" && isReady) {
                         router.push("/challenge");
                     }
                 }
@@ -87,6 +88,21 @@ export default function LobbyPage() {
         }
     };
 
+    const handleForceReset = async () => {
+        if (!confirm("Вы уверены, что хотите прервать текущую игру для всех?")) return;
+        try {
+            await fetch("/api/state", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "reset" }),
+            });
+            setIsReady(false);
+            setSheetUrl("");
+        } catch (e) {
+            alert("Не удалось сбросить игру");
+        }
+    };
+
     const allReady = gameState &&
         gameState.players.teacher.isReady &&
         gameState.players.student1.isReady &&
@@ -131,33 +147,53 @@ export default function LobbyPage() {
                     </p>
                 </div>
 
-                {/* Input area */}
-                <div className="neu-flat p-6 rounded-2xl flex flex-col gap-4">
-                    <label className="font-bold text-lg text-[var(--foreground)]">
-                        Ссылка на опубликованную Google Таблицу:
-                    </label>
-                    <input
-                        type="text"
-                        value={sheetUrl}
-                        onChange={(e) => setSheetUrl(e.target.value)}
-                        disabled={isReady}
-                        placeholder="Вставьте ссылку https://docs.google.com... или 'test'"
-                        className="w-full p-4 rounded-xl neu-pressed bg-transparent outline-none focus:ring-2 ring-[var(--primary)] transition-all font-mono text-sm"
-                    />
-                </div>
+                {gameState?.status === "PLAYING" ? (
+                    <div className="neu-flat p-6 rounded-2xl flex flex-col gap-4 border-2 border-red-500/50 bg-red-500/10">
+                        <label className="font-bold text-lg text-red-400">
+                            ⚠️ Игра уже в процессе!
+                        </label>
+                        <p className="text-sm opacity-80">
+                            Вы не можете присоединиться, так как матч уже начался. Учитель может сбросить игру.
+                        </p>
+                        {role === "teacher" && (
+                            <button
+                                onClick={handleForceReset}
+                                className="w-full py-4 bg-red-500 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl hover:bg-red-600 active:scale-95 transition-all mt-2"
+                            >
+                                Прервать и сбросить игру
+                            </button>
+                        )}
+                    </div>
+                ) : (
+                    <>
+                        <div className="neu-flat p-6 rounded-2xl flex flex-col gap-4">
+                            <label className="font-bold text-lg text-[var(--foreground)]">
+                                Ссылка на опубликованную Google Таблицу:
+                            </label>
+                            <input
+                                type="text"
+                                value={sheetUrl}
+                                onChange={(e) => setSheetUrl(e.target.value)}
+                                disabled={isReady}
+                                placeholder="Вставьте ссылку https://docs.google.com... или 'test'"
+                                className="w-full p-4 rounded-xl neu-pressed bg-transparent outline-none focus:ring-2 ring-[var(--primary)] transition-all font-mono text-sm"
+                            />
+                        </div>
 
-                <button
-                    onClick={handleReady}
-                    disabled={!sheetUrl || isReady}
-                    className={`w-full py-4 text-xl font-bold rounded-2xl transition-all duration-300 ${isReady
-                        ? "neu-pressed text-green-500 opacity-80"
-                        : sheetUrl
-                            ? "neu-button text-[var(--primary)] hover:scale-[1.02]"
-                            : "neu-flat opacity-50 cursor-not-allowed"
-                        }`}
-                >
-                    {isReady ? "Ожидаем других игроков..." : "Я готов!"}
-                </button>
+                        <button
+                            onClick={handleReady}
+                            disabled={!sheetUrl || isReady}
+                            className={`w-full py-4 text-xl font-bold rounded-2xl transition-all duration-300 ${isReady
+                                ? "neu-pressed text-green-500 opacity-80"
+                                : sheetUrl
+                                    ? "neu-button text-[var(--primary)] hover:scale-[1.02]"
+                                    : "neu-flat opacity-50 cursor-not-allowed"
+                                }`}
+                        >
+                            {isReady ? "Ожидаем других игроков..." : "Я готов!"}
+                        </button>
+                    </>
+                )}
 
                 {role === "teacher" && (
                     <div className="pt-8 border-t border-[var(--foreground)]/10 text-center">
